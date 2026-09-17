@@ -16,6 +16,8 @@ import {
   Mail,
   Cpu,
   Clock,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   ChatMessageItem,
@@ -29,8 +31,13 @@ import InterviewApprovalCard from "../hitl/InterviewApprovalCard";
 import OfferLetterApprovalCard from "../hitl/OfferLetterApprovalCard";
 import JoiningLetterApprovalCard from "../hitl/JoiningLetterApprovalCard";
 import InterviewRescheduleCard from "../hitl/InterviewRescheduleCard";
+import InterviewScorecardCard from "../hitl/InterviewScorecardCard";
+import CandidateRejectionCard from "../hitl/CandidateRejectionCard";
+import SalaryNegotiationCard from "../hitl/SalaryNegotiationCard";
+import BGVTrackerCard from "../hitl/BGVTrackerCard";
 import CandidateCard from "../candidates/CandidateCard";
 import ChatInputMenu from "./ChatInputMenu";
+import MarkdownContent from "./MarkdownContent";
 
 interface AgentChatViewProps {
   messages: ChatMessageItem[];
@@ -65,11 +72,20 @@ export default function AgentChatView({
   const [searchMode, setSearchMode] = useState<"hybrid" | "semantic" | "sql">(
     "hybrid",
   );
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleCopyMessage = (msgId: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgId(msgId);
+    setTimeout(() => {
+      setCopiedMsgId(null);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -269,8 +285,39 @@ export default function AgentChatView({
                     )}
 
                     {/* Assistant Text Bubble */}
-                    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 text-xs sm:text-sm text-slate-200 shadow-xl backdrop-blur-xl leading-relaxed whitespace-pre-wrap">
-                      {msg.content}
+                    <div className="relative group rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 text-slate-200 shadow-xl backdrop-blur-xl">
+                      <MarkdownContent content={msg.content} />
+
+                      {/* Footer Info & Copy Action */}
+                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-white/5 text-[10px] text-slate-400">
+                        <span className="font-mono">
+                          {msg.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMessage(msg.id, msg.content)}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-950/60 hover:bg-slate-800 border border-white/5 hover:border-white/10 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+                          title="Copy message text"
+                        >
+                          {copiedMsgId === msg.id ? (
+                            <>
+                              <Check className="h-3 w-3 text-emerald-400" />
+                              <span className="text-emerald-400 font-medium">
+                                Copied
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Embedded Candidates Cards */}
@@ -325,6 +372,38 @@ export default function AgentChatView({
                             onReject={onRejectAction}
                           />
                         )}
+                        {linkedAction.type === "interview_scorecard" &&
+                          linkedAction.payload.scorecard && (
+                            <InterviewScorecardCard
+                              scorecard={linkedAction.payload.scorecard}
+                              onApprove={() => onApproveAction(linkedAction.id)}
+                              onReject={() => onRejectAction(linkedAction.id)}
+                            />
+                          )}
+                        {linkedAction.type === "candidate_rejection" &&
+                          linkedAction.payload.rejection && (
+                            <CandidateRejectionCard
+                              rejection={linkedAction.payload.rejection}
+                              onApprove={() => onApproveAction(linkedAction.id)}
+                              onReject={() => onRejectAction(linkedAction.id)}
+                            />
+                          )}
+                        {linkedAction.type === "salary_negotiation" &&
+                          linkedAction.payload.negotiation && (
+                            <SalaryNegotiationCard
+                              negotiation={linkedAction.payload.negotiation}
+                              onApprove={() => onApproveAction(linkedAction.id)}
+                              onReject={() => onRejectAction(linkedAction.id)}
+                            />
+                          )}
+                        {linkedAction.type === "bgv_verification" &&
+                          linkedAction.payload.bgv && (
+                            <BGVTrackerCard
+                              bgv={linkedAction.payload.bgv}
+                              onApprove={() => onApproveAction(linkedAction.id)}
+                              onReject={() => onRejectAction(linkedAction.id)}
+                            />
+                          )}
                         {linkedAction.type === "linkedin_post" && (
                           <LinkedInPostApprovalCard
                             action={linkedAction}

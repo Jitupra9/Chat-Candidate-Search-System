@@ -885,10 +885,12 @@ I can handle your end-to-end recruitment lifecycle while keeping you firmly in c
 1. **📢 LinkedIn Social Sourcing**: Ask me to draft and publish job posts to LinkedIn, and monitor incoming candidate inquiries/DMs.
 2. **🔍 Semantic & Hybrid Candidate Search**: Search candidates by skills, domain expertise, and years of experience with grounded citations.
 3. **⚡ Dynamic Pipeline Filtering**: Tell me to *"Remove candidates with under 5 years exp"* or *"Filter for candidates with FastAPI"*.
-4. **🛡️ Human-in-the-Loop (HITL) Safety Gates**: Every state-changing action (sending emails, scheduling interviews, publishing social posts) requires your explicit approval before execution.
-5. **📬 Inbound Email Reply Tracking**: I automatically classify candidate replies and notify you when an interview is confirmed or needs rescheduling.
+4. **📅 Automated Scheduling & Rescheduling**: Coordinate technical rounds, resolve calendar conflicts, and negotiate meeting times.
+5. **📝 Scorecard Synthesis & Consensus**: Aggregate interview feedback across panel members and generate debrief recommendations.
+6. **💬 Compensation & Offer Formulation**: Model counter-offers against approved budget bands and generate official offer agreements.
+7. **🛡️ Human-in-the-Loop (HITL) Safety Gates**: Every state-changing action (sending emails, scheduling interviews, publishing social posts, dispatching offer letters) requires your explicit approval before execution.
 
-*Try one of the quick suggestions below to see me in action!*`,
+*Click one of the starter workflows above or type your hiring request below to begin!*`,
     timestamp: new Date(Date.now() - 10 * 60 * 1000),
   },
 ];
