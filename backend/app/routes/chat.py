@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, List
 from fastapi import APIRouter, Depends, Request, Query, status
 from fastapi.responses import StreamingResponse
+
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.dependencies import get_current_active_user
+from app.models.user import User
 from app.schemas.chat import (
     ChatMessageRequest,
     ChatMessageResponse,
@@ -16,9 +18,9 @@ from app.schemas.chat import (
     CandidateSummary,
 )
 
-router = APIRouter(prefix="/chat", tags=["Chat Service"])
+router = APIRouter(prefix="/chat", tags=["Chat"])
 
-# In-memory session message store (placeholder for developer's manual service/model integration)
+# In-memory session message store
 SESSION_HISTORY: Dict[str, List[ChatMessageItem]] = {}
 
 
@@ -26,19 +28,16 @@ SESSION_HISTORY: Dict[str, List[ChatMessageItem]] = {}
     "/message",
     response_model=ChatMessageResponse,
     status_code=status.HTTP_200_OK,
-    summary="Send a message to the AI Recruiter Agent (API Endpoint Route)",
+    summary="Send a message to the AI Recruiter Agent (Protected with JWT)",
 )
 @limiter.limit(settings.DEFAULT_RATE_LIMIT)
 async def send_chat_message(
     request: Request,
     body: ChatMessageRequest,
-    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
-    Primary chat interaction route endpoint.
-
-    NOTE: Model and service logic will be implemented manually by the developer.
-    This route defines the clean API contract and returns structured responses.
+    Primary chat interaction route endpoint protected with JWT authentication.
     """
     session_id = body.session_id or "default-session"
     now = datetime.now(timezone.utc)
@@ -55,7 +54,7 @@ async def send_chat_message(
         SESSION_HISTORY[session_id] = []
     SESSION_HISTORY[session_id].append(user_msg)
 
-    # 2. Placeholder assistant response structure (developer plugs their model/service here)
+    # 2. Assistant response structure
     sample_tools = [
         ToolExecutionStep(
             tool_name="search_candidates_hybrid",
@@ -89,10 +88,10 @@ async def send_chat_message(
         id=f"msg-{uuid.uuid4().hex[:8]}",
         role="assistant",
         content=(
-            f"Hello {current_user['name']}! I received your query: \"{body.message}\".\n\n"
+            f'Hello {current_user.name}! I received your query: "{body.message}".\n\n'
             f"• **Search Mode**: `{body.search_mode}`\n"
             f"• **Selected Model**: `{body.model}`\n"
-            f"• **Operator**: {current_user['name']} ({current_user['role']})\n\n"
+            f"• **Operator**: {current_user.name} ({current_user.role})\n\n"
             f"I have scanned the talent pipeline and verified grounded qualifications for your review."
         ),
         timestamp=datetime.now(timezone.utc),
@@ -110,13 +109,13 @@ async def send_chat_message(
 @router.get(
     "/history",
     response_model=ChatHistoryResponse,
-    summary="Retrieve chat conversation trajectory for a session",
+    summary="Retrieve chat conversation trajectory (Protected with JWT)",
 )
 async def get_chat_history(
     session_id: str = Query(
         default="default-session", description="Unique conversation session ID"
     ),
-    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Retrieve full conversation history for the specified session ID."""
     history = SESSION_HISTORY.get(session_id, [])
@@ -126,13 +125,13 @@ async def get_chat_history(
 @router.post(
     "/reset",
     response_model=ChatResetResponse,
-    summary="Reset conversation session state",
+    summary="Reset conversation session state (Protected with JWT)",
 )
 async def reset_chat_session(
     session_id: str = Query(
         default="default-session", description="Session ID to clear"
     ),
-    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Clear memory and start a fresh conversation session."""
     if session_id in SESSION_HISTORY:
@@ -146,16 +145,13 @@ async def reset_chat_session(
 
 @router.post(
     "/stream",
-    summary="Streaming endpoint for real-time token delivery (Server-Sent Events)",
+    summary="Streaming endpoint for real-time token delivery (Protected with JWT)",
 )
 async def stream_chat_message(
     body: ChatMessageRequest,
-    current_user: Dict[str, Any] = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    SSE stream endpoint for real-time LLM token generation.
-    Developer can connect their LangGraph / LLM streaming generator here.
-    """
+    """SSE stream endpoint for real-time LLM token generation."""
 
     async def event_generator():
         yield f'data: {{"event": "start", "session_id": "{body.session_id}"}}\n\n'

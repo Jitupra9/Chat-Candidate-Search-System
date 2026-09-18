@@ -6,9 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TalentPulse AI Backend"
-    API_V1_STR: str = "/api/v1"
+    API_STR: str = "/api"
     ENVIRONMENT: str = "development"
     DEBUG: Union[bool, str] = True
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/talentpulse"
+    )
 
     @field_validator("DEBUG", mode="before")
     @classmethod
